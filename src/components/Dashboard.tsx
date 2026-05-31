@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
-import { UserProgress, Subject } from '../types';
+import { UserProgress, Subject, MockExamResult } from '../types';
 import { subjects } from '../data/subjects';
 import { cn } from '../lib/utils';
 
@@ -13,6 +13,27 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ progress, onBack, onViewStudyPlanner, onViewPastQuestions }: DashboardProps) {
+  // Load mock results from local storage
+  const mockResults: MockExamResult[] = (() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('eduquest_mock_results');
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  })();
+
+  const trendData = mockResults.slice(-8).map(m => ({
+    name: m.subjectName.length > 11 ? m.subjectName.substring(0, 11) + '...' : m.subjectName,
+    fullSubjectName: m.subjectName,
+    percentage: m.percentage,
+    grade: m.grade,
+    score: m.score,
+    totalQuestions: m.totalQuestions,
+    date: m.date,
+    level: m.level,
+    indexNumber: m.indexNumber
+  }));
+
   const totalScore = progress.reduce((acc, p) => acc + p.score, 0);
   const totalAttempts = progress.reduce((acc, p) => acc + p.totalAttempts, 0);
   const completedSubjects = progress.length;
@@ -241,7 +262,7 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         {/* Insights */}
         <div className="space-y-6">
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md text-left">
             <div className="flex items-center gap-3 mb-6 text-green-400">
               <Icons.CheckCircle2 size={24} />
               <h3 className="text-xl font-bold">Your Strengths</h3>
@@ -259,7 +280,7 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
             )}
           </div>
 
-          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+          <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md text-left">
             <div className="flex items-center gap-3 mb-6 text-red-400">
               <Icons.AlertCircle size={24} />
               <h3 className="text-xl font-bold">Areas for Improvement</h3>
@@ -276,6 +297,82 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
               <p className="text-slate-500 text-sm italic">No major weaknesses found. Great job!</p>
             )}
           </div>
+        </div>
+
+        {/* Mock Exam Trend Chart */}
+        <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md flex flex-col justify-between text-left">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-3 text-blue-400">
+                <Icons.Award size={24} className="text-yellow-400" />
+                <h3 className="text-xl font-bold text-white">Mock Exam Grade History</h3>
+              </div>
+              {trendData.length > 0 && (
+                <span className="text-xs font-bold text-slate-500">
+                  Last {trendData.length} Trials
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mb-6">
+              Visual tracking of your overall progress percentage and WAEC mock grades over time.
+            </p>
+          </div>
+
+          {trendData.length > 0 ? (
+            <div className="h-[280px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trendData}>
+                  <defs>
+                    <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#64748b" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tick={{ fill: '#64748b' }}
+                  />
+                  <YAxis 
+                    stroke="#64748b" 
+                    fontSize={10} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tick={{ fill: '#64748b' }}
+                    domain={[0, 100]}
+                  />
+                  <Tooltip content={<MockTooltip />} />
+                  <Area 
+                    type="monotone" 
+                    dataKey="percentage" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorTrend)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="py-12 px-6 flex flex-col items-center justify-center text-center border border-dashed border-white/10 rounded-2xl bg-white/2 my-auto">
+              <Icons.ShieldAlert size={48} className="text-slate-500 mb-4 animate-pulse" />
+              <h4 className="font-bold text-white mb-2 text-sm">No Mock Exam History Yet</h4>
+              <p className="text-xs text-slate-400 mb-6 max-w-[280px] leading-relaxed">
+                Complete simulated examinations in the Past Questions tab to track your academic performance trend.
+              </p>
+              <button
+                onClick={onViewPastQuestions}
+                className="px-5 py-2.5 text-xs font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-all flex items-center gap-1.5"
+              >
+                <Icons.Play size={12} fill="currentColor" />
+                Start Mock Exam
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -323,4 +420,39 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any, label: strin
       <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">{label}</div>
     </div>
   );
+}
+
+function MockTooltip({ active, payload }: any) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-slate-950 border border-white/20 p-4 rounded-2xl shadow-2xl text-left max-w-[280px]">
+        <div className="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{data.date}</p>
+          <span className="px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-400 font-extrabold text-[9px]">
+            {data.level}
+          </span>
+        </div>
+        <p className="font-extrabold text-white text-sm mb-1 line-clamp-1">{data.fullSubjectName}</p>
+        <div className="space-y-1 text-xs">
+          <p className="text-slate-400">
+            Score: <span className="text-white font-bold">{data.score}/{data.totalQuestions}</span>
+          </p>
+          <p className="text-slate-400">
+            Percentage: <span className="text-blue-400 font-black">{data.percentage}%</span>
+          </p>
+          <p className="text-slate-400">
+            Index No: <span className="text-slate-300 font-mono text-[10px]">{data.indexNumber}</span>
+          </p>
+          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
+            <span className="text-[10px] font-bold text-slate-400">Grade:</span>
+            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 font-black text-xs">
+              {data.grade}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }

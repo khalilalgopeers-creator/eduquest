@@ -54,6 +54,22 @@ export interface UserProgress {
 
 export type ExaminationType = 'BECE' | 'WASSCE';
 
+export interface MockExamResult {
+  id: string;
+  candidateName: string;
+  indexNumber: string;
+  subjectName: string;
+  subjectId: string;
+  level: ExaminationType;
+  score: number;
+  totalQuestions: number;
+  percentage: number;
+  grade: string;
+  gradeRemark: string;
+  date: string;
+  year: number;
+}
+
 export interface ExamDate {
   subjectId: string;
   date: string;

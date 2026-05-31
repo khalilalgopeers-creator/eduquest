@@ -13,6 +13,7 @@ import Settings from './components/Settings';
 import Legal from './components/Legal';
 import AIVsHumanQuiz from './components/AIVsHumanQuiz';
 import PastQuestions from './components/PastQuestions';
+import GroupStudyHub from './components/GroupStudyHub';
 import { subjects } from './data/subjects';
 import { AppState, Subject, UserProgress, Question, ExaminationType } from './types';
 import { cn } from './lib/utils';
@@ -31,6 +32,7 @@ export default function App() {
     return savedProgress ? JSON.parse(savedProgress) : [];
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupStudySubject, setGroupStudySubject] = useState<Subject | null>(null);
 
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem('eduquest_profile');
@@ -259,6 +261,7 @@ export default function App() {
                         key={subject.id} 
                         subject={subject} 
                         onClick={() => handleSubjectSelect(subject)}
+                        onGroupStudyClick={() => setGroupStudySubject(subject)}
                       />
                     ))}
                   </div>
@@ -302,6 +305,9 @@ export default function App() {
                 }}
                 onStartAIDuel={() => setState('ai-vs-human')}
                 onStartPastQuestions={() => setState('past-questions')}
+                onStartMockExam={() => {
+                  setState('past-questions');
+                }}
               />
             </motion.div>
           )}
@@ -340,6 +346,7 @@ export default function App() {
             >
               <PastQuestions 
                 onBack={() => setState('home')}
+                initialSubjectId={selectedSubject?.id}
                 onStartQuiz={(questions, subject, year, type) => {
                   setPastQuestions(questions);
                   setPastYear(year);
@@ -406,6 +413,15 @@ export default function App() {
               <StudyPlanner 
                 progress={progress} 
                 onBack={() => setState('home')}
+                onStartMockExam={(subjId) => {
+                  if (subjId) {
+                    const match = subjects.find(s => s.id === subjId);
+                    if (match) setSelectedSubject(match);
+                  } else {
+                    setSelectedSubject(null);
+                  }
+                  setState('past-questions');
+                }}
               />
             </motion.div>
           )}
@@ -437,6 +453,15 @@ export default function App() {
                 initialTab={state as any}
               />
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {groupStudySubject && (
+            <GroupStudyHub 
+              subject={groupStudySubject}
+              onClose={() => setGroupStudySubject(null)}
+            />
           )}
         </AnimatePresence>
       </main>

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, BookOpen, ListChecks, Play, Zap, Sparkles, Loader2, X, CheckCircle2, AlertCircle, Volume2, VolumeX, Info, Brain, History, Beaker } from 'lucide-react';
+import { ArrowLeft, BookOpen, ListChecks, Play, Zap, Sparkles, Loader2, X, CheckCircle2, AlertCircle, Volume2, VolumeX, Info, Brain, History, Beaker, Award } from 'lucide-react';
 import { Subject, AIExplanationResponse } from '../types';
 import { cn } from '../lib/utils';
 import { generateDetailedExplanation, generateSpeech } from '../lib/gemini';
@@ -11,9 +11,10 @@ interface SubjectDetailProps {
   onStartQuiz: (isAdvanced: boolean, isAI: boolean) => void;
   onStartAIDuel: () => void;
   onStartPastQuestions: () => void;
+  onStartMockExam: () => void;
 }
 
-export default function SubjectDetail({ subject, onBack, onStartQuiz, onStartAIDuel, onStartPastQuestions }: SubjectDetailProps) {
+export default function SubjectDetail({ subject, onBack, onStartQuiz, onStartAIDuel, onStartPastQuestions, onStartMockExam }: SubjectDetailProps) {
   const [explainingConcept, setExplainingConcept] = useState<string | null>(null);
   const [aiResponse, setAiResponse] = useState<AIExplanationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -342,6 +343,31 @@ export default function SubjectDetail({ subject, onBack, onStartQuiz, onStartAID
               </div>
             </section>
           )}
+
+          {/* End of Subject Completion Challenge */}
+          <section className="bg-gradient-to-r from-blue-600/10 via-purple-600/15 to-indigo-600/10 border border-blue-500/20 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 p-6 text-blue-500/10 pointer-events-none">
+              <Award size={120} />
+            </div>
+            <div className="relative z-10 max-w-xl">
+              <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-black uppercase tracking-widest mb-4 inline-block">
+                Syllabus Final Challenge
+              </span>
+              <h3 className="text-2xl font-black text-white mb-2">Ready for the Exam Hall?</h3>
+              <p className="text-slate-400 text-sm leading-relaxed mb-6">
+                Now that you've reviewed the syllabus and concepts for {subject.name}, put your skills to the ultimate test in the National Mock Center. Get graded against real WAEC/BECE standards with instant results.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onStartMockExam}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-blue-600/25 transition-all text-sm"
+              >
+                <Award size={18} className="text-yellow-400" fill="currentColor" />
+                Launch {subject.name} Mock Exam
+              </motion.button>
+            </div>
+          </section>
         </div>
 
         {/* Right Column: Action Card */}
@@ -383,6 +409,16 @@ export default function SubjectDetail({ subject, onBack, onStartQuiz, onStartAID
                 >
                   <Sparkles size={20} />
                   AI Generated Quiz
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onStartMockExam}
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg border border-blue-400/30"
+                >
+                  <Award size={20} className="text-yellow-400" />
+                  National Mock Exam
                 </motion.button>
 
                 <motion.button

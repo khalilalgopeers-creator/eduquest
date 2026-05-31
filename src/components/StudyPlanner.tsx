@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Calendar, Brain, Clock, AlertCircle, ChevronRight, Sparkles, Save, Trash2, Plus, Loader2, X, ListChecks, CheckCircle2, GraduationCap, Zap, Volume2, VolumeX, Info, Bell, BellOff } from 'lucide-react';
+import { Calendar, Brain, Clock, AlertCircle, ChevronRight, Sparkles, Save, Trash2, Plus, Loader2, X, ListChecks, CheckCircle2, GraduationCap, Zap, Volume2, VolumeX, Info, Bell, BellOff, Award } from 'lucide-react';
 import { Subject, UserProgress, ExamDate, AIExplanationResponse, ExaminationType } from '../types';
 import { subjects } from '../data/subjects';
 import { GoogleGenAI, Type } from "@google/genai";
@@ -10,6 +10,7 @@ import { generateDetailedExplanation, generateSpeech } from '../lib/gemini';
 interface StudyPlannerProps {
   progress: UserProgress[];
   onBack: () => void;
+  onStartMockExam?: (subjectId?: string) => void;
 }
 
 interface PlanItem {
@@ -21,7 +22,7 @@ interface PlanItem {
   goalMet: string;
 }
 
-export default function StudyPlanner({ progress, onBack }: StudyPlannerProps) {
+export default function StudyPlanner({ progress, onBack, onStartMockExam }: StudyPlannerProps) {
   const [examDates, setExamDates] = useState<ExamDate[]>([]);
   const [examination, setExamination] = useState<ExaminationType>('BECE');
   const [dailyGoal, setDailyGoal] = useState<string>('Study for 2 hours');
@@ -641,6 +642,17 @@ export default function StudyPlanner({ progress, onBack }: StudyPlannerProps) {
                             </div>
                             
                             <div className="flex items-center gap-6 md:border-l md:border-white/10 md:pl-8">
+                              <button
+                                onClick={() => {
+                                  const matchingSubject = subjects.find(s => s.name.toLowerCase() === item.subject.toLowerCase());
+                                  onStartMockExam?.(matchingSubject?.id);
+                                }}
+                                className="px-3 py-1.5 rounded-xl bg-blue-600/20 border border-blue-500/30 text-xs text-blue-400 font-bold hover:bg-blue-650/40 hover:text-white transition-all flex items-center gap-1.5 shrink-0"
+                                title={`Take simulated exam for ${item.subject}`}
+                              >
+                                <Award size={14} />
+                                <span>Simulate</span>
+                              </button>
                               <div className="flex items-center gap-3">
                                 <button
                                   onClick={() => reminders[idx] ? removeReminder(idx) : setSettingReminderIdx(idx)}
@@ -768,6 +780,30 @@ export default function StudyPlanner({ progress, onBack }: StudyPlannerProps) {
             )}
           </AnimatePresence>
         </div>
+      </div>
+
+      {/* End of Study Planner: Exams Integration Banner */}
+      <div className="bg-gradient-to-r from-purple-900/20 via-blue-900/10 to-indigo-950/20 border border-purple-500/20 rounded-[40px] p-8 md:p-10 backdrop-blur-xl flex flex-col md:flex-row items-center justify-between gap-8 text-left mt-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 text-purple-500/5 pointer-events-none">
+          <Award size={140} />
+        </div>
+        <div className="space-y-4 max-w-xl text-left relative z-10">
+          <div className="flex items-center gap-2 text-purple-450">
+            <GraduationCap className="text-purple-400" size={24} />
+            <span className="text-xs font-black uppercase tracking-widest text-purple-300">Active Exam Readiness</span>
+          </div>
+          <h3 className="text-2xl md:text-3xl font-black text-white">Measure Your Preparedness</h3>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            Following your study schedule is great, but simulated examination conditions are how you master the actual test. Ready to see what grade you'll score today?
+          </p>
+        </div>
+        <button 
+          onClick={() => onStartMockExam?.()}
+          className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-2xl font-black text-base shadow-xl shadow-purple-600/20 transition-all shrink-0 hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 relative z-10"
+        >
+          <Award size={20} className="text-yellow-400 animate-pulse" />
+          Go to National Mock Center
+        </button>
       </div>
 
       {/* Reminder Modal */}
