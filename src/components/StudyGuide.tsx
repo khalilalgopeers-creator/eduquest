@@ -132,7 +132,7 @@ export default function StudyGuide({ onBack, onSelectSubject }: StudyGuideProps)
               
               <div className="p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {subject.syllabus.map((topic, tIndex) => (
+                  {subject.syllabus.slice(0, 6).map((topic, tIndex) => (
                     <div 
                       key={tIndex}
                       className="flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200 transition-colors cursor-default"
@@ -141,6 +141,11 @@ export default function StudyGuide({ onBack, onSelectSubject }: StudyGuideProps)
                       <span className="truncate">{topic}</span>
                     </div>
                   ))}
+                  {subject.syllabus.length > 6 && (
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 italic mt-1 sm:col-span-2">
+                      <span>+ {subject.syllabus.length - 6} more topics...</span>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">

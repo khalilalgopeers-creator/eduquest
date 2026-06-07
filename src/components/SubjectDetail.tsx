@@ -179,7 +179,7 @@ export default function SubjectDetail({ subject, onBack, onStartQuiz, onStartAID
                     key={index}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: Math.min(index, 8) * 0.03 }}
                     className={cn(
                       "flex items-start gap-3 transition-all cursor-pointer group",
                       isCompleted ? "text-slate-500" : "text-slate-300"

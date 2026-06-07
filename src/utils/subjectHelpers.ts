@@ -5,7 +5,7 @@ import { Subject } from '../types';
  */
 export function getSubjectLevel(subjectId: string): 'JHS' | 'SHS' | 'Both' {
   // Subjects that are uniquely JHS
-  const jhsOnly = ['career', 'fante'];
+  const jhsOnly = ['career', 'fante', 'rme'];
   
   // Subjects that are core or taken at both levels
   const both = ['math', 'english', 'science', 'social', 'ict', 'french', 'music', 'arts', 'pe'];
