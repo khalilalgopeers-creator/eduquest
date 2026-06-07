@@ -35,6 +35,10 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
   const [reminders, setReminders] = useState<Record<number, string>>({});
   const [settingReminderIdx, setSettingReminderIdx] = useState<number | null>(null);
 
+  // New exam selection states to avoid direct DOM query
+  const [newExamSubjectId, setNewExamSubjectId] = useState<string>('');
+  const [newExamDate, setNewExamDate] = useState<string>('');
+
   // AI Explanation State
   const [explainingTopic, setExplainingTopic] = useState<{ topic: string; subject: string } | null>(null);
   const [aiResponse, setAiResponse] = useState<AIExplanationResponse | null>(null);
@@ -57,12 +61,13 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
     };
   }, []);
 
-  // Load exam dates and examination type from localStorage
+  // Load exam dates, examination type, and generated plan from localStorage
   useEffect(() => {
     const savedDates = localStorage.getItem('eduquest_exam_dates');
     const savedExam = localStorage.getItem('eduquest_examination_type') as ExaminationType;
     const savedGoal = localStorage.getItem('eduquest_daily_goal');
     const savedReminders = localStorage.getItem('eduquest_study_reminders');
+    const savedPlan = localStorage.getItem('eduquest_generated_plan');
     
     if (savedDates) {
       setExamDates(JSON.parse(savedDates));
@@ -76,15 +81,23 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
     if (savedReminders) {
       setReminders(JSON.parse(savedReminders));
     }
+    if (savedPlan) {
+      setGeneratedPlan(JSON.parse(savedPlan));
+    }
   }, []);
 
-  // Save exam dates and examination type to localStorage
+  // Save exam dates, examination type, and generated plan to localStorage
   useEffect(() => {
     localStorage.setItem('eduquest_exam_dates', JSON.stringify(examDates));
     localStorage.setItem('eduquest_examination_type', examination);
     localStorage.setItem('eduquest_daily_goal', dailyGoal);
     localStorage.setItem('eduquest_study_reminders', JSON.stringify(reminders));
-  }, [examDates, examination, dailyGoal, reminders]);
+    if (generatedPlan) {
+      localStorage.setItem('eduquest_generated_plan', JSON.stringify(generatedPlan));
+    } else {
+      localStorage.removeItem('eduquest_generated_plan');
+    }
+  }, [examDates, examination, dailyGoal, reminders, generatedPlan]);
 
   // Load/Save completed indices
   useEffect(() => {
@@ -314,7 +327,7 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: prompt }] }],
         config: {
           responseMimeType: "application/json",
@@ -461,15 +474,9 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
                 <p className="text-sm font-bold text-slate-400 mb-3">Add New Exam</p>
                 <div className="space-y-3">
                   <select 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    onChange={(e) => {
-                      const subjectId = e.target.value;
-                      if (subjectId) {
-                        const date = (document.getElementById('exam-date-input') as HTMLInputElement).value;
-                        if (date) handleAddExamDate(subjectId, date);
-                      }
-                    }}
-                    defaultValue=""
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                    value={newExamSubjectId}
+                    onChange={(e) => setNewExamSubjectId(e.target.value)}
                   >
                     <option value="" disabled>Select Subject</option>
                     {subjects.filter(s => !examDates.find(e => e.subjectId === s.id)).map(s => {
@@ -483,10 +490,25 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
                     })}
                   </select>
                   <input 
-                    id="exam-date-input"
                     type="date" 
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-sm"
+                    value={newExamDate}
+                    onChange={(e) => setNewExamDate(e.target.value)}
                   />
+                  <button
+                    onClick={() => {
+                      if (newExamSubjectId && newExamDate) {
+                        handleAddExamDate(newExamSubjectId, newExamDate);
+                        setNewExamSubjectId('');
+                        setNewExamDate('');
+                      }
+                    }}
+                    disabled={!newExamSubjectId || !newExamDate}
+                    className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={14} />
+                    Add Exam
+                  </button>
                 </div>
               </div>
             </div>
@@ -542,24 +564,42 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
-                    <button 
-                      onClick={() => setViewMode('list')}
-                      className={cn(
-                        "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
-                        viewMode === 'list' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
-                      )}
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 p-1 bg-white/5 rounded-xl border border-white/10">
+                      <button 
+                        onClick={() => setViewMode('list')}
+                        className={cn(
+                          "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+                          viewMode === 'list' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+                        )}
+                      >
+                        List
+                      </button>
+                      <button 
+                        onClick={() => setViewMode('calendar')}
+                        className={cn(
+                          "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
+                          viewMode === 'calendar' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
+                        )}
+                      >
+                        Calendar
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        if (confirm("Are you sure you want to clear your current study schedule?")) {
+                          setGeneratedPlan(null);
+                          setCompletedIndices([]);
+                          setReminders({});
+                          localStorage.removeItem('eduquest_generated_plan');
+                        }
+                      }}
+                      className="px-3 py-2 border border-red-500/25 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+                      title="Clear schedule and start over"
                     >
-                      List
-                    </button>
-                    <button 
-                      onClick={() => setViewMode('calendar')}
-                      className={cn(
-                        "px-4 py-1.5 rounded-lg text-xs font-bold transition-all",
-                        viewMode === 'calendar' ? "bg-white/10 text-white" : "text-slate-500 hover:text-slate-300"
-                      )}
-                    >
-                      Calendar
+                      <Trash2 size={13} />
+                      <span>Clear</span>
                     </button>
                   </div>
                 </div>
