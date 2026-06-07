@@ -12,6 +12,7 @@ import { subjects } from '../data/subjects';
 import { generatePastQuestions } from '../lib/gemini';
 import { cn } from '../lib/utils';
 import confetti from 'canvas-confetti';
+import { isJHSSubject, isSHSSubject } from '../utils/subjectHelpers';
 
 interface NationalMockCenterProps {
   onBack: () => void;
@@ -29,6 +30,17 @@ export default function NationalMockCenter({ onBack, initialSubjectId }: Nationa
   });
   const [selectedLevel, setSelectedLevel] = useState<ExaminationType>('BECE');
   const [selectedYear, setSelectedYear] = useState<number>(2025);
+
+  // Sync selected subject with level availability
+  useEffect(() => {
+    if (selectedLevel === 'BECE' && !isJHSSubject(selectedSubject.id)) {
+      const firstJhs = subjects.find(s => isJHSSubject(s.id));
+      if (firstJhs) setSelectedSubject(firstJhs);
+    } else if (selectedLevel === 'WASSCE' && !isSHSSubject(selectedSubject.id)) {
+      const firstShs = subjects.find(s => isSHSSubject(s.id));
+      if (firstShs) setSelectedSubject(firstShs);
+    }
+  }, [selectedLevel, selectedSubject, setSelectedSubject]);
   
   // Phase handling: 'lobby' | 'registration' | 'testing' | 'results'
   const [examPhase, setExamPhase] = useState<'lobby' | 'registration' | 'testing' | 'results'>('lobby');
@@ -331,11 +343,13 @@ export default function NationalMockCenter({ onBack, initialSubjectId }: Nationa
                     }}
                     className="w-full bg-slate-900 border border-white/10 hover:border-white/20 rounded-xl py-3 px-3.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                   >
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id} className="bg-slate-900 text-xs text-white">
-                        {s.name}
-                      </option>
-                    ))}
+                    {subjects
+                      .filter(s => selectedLevel === 'BECE' ? isJHSSubject(s.id) : isSHSSubject(s.id))
+                      .map(s => (
+                        <option key={s.id} value={s.id} className="bg-slate-900 text-xs text-white">
+                          {s.name}
+                        </option>
+                      ))}
                   </select>
                 </div>
 

@@ -6,6 +6,7 @@ import { subjects } from '../data/subjects';
 import { GoogleGenAI, Type } from "@google/genai";
 import { cn } from '../lib/utils';
 import { generateDetailedExplanation, generateSpeech } from '../lib/gemini';
+import { getSubjectLevel } from '../utils/subjectHelpers';
 
 interface StudyPlannerProps {
   progress: UserProgress[];
@@ -471,9 +472,15 @@ export default function StudyPlanner({ progress, onBack, onStartMockExam }: Stud
                     defaultValue=""
                   >
                     <option value="" disabled>Select Subject</option>
-                    {subjects.filter(s => !examDates.find(e => e.subjectId === s.id)).map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
+                    {subjects.filter(s => !examDates.find(e => e.subjectId === s.id)).map(s => {
+                      const level = getSubjectLevel(s.id);
+                      const levelLabel = level === 'Both' ? 'JHS & SHS' : level;
+                      return (
+                        <option key={s.id} value={s.id} className="bg-slate-900 text-slate-100">
+                          {s.name} ({levelLabel})
+                        </option>
+                      );
+                    })}
                   </select>
                   <input 
                     id="exam-date-input"

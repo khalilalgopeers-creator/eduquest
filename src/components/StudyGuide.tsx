@@ -4,6 +4,7 @@ import * as Icons from 'lucide-react';
 import { Subject } from '../types';
 import { subjects } from '../data/subjects';
 import { cn } from '../lib/utils';
+import { getSubjectLevel, isJHSSubject, isSHSSubject } from '../utils/subjectHelpers';
 
 interface StudyGuideProps {
   onBack: () => void;
@@ -12,8 +13,13 @@ interface StudyGuideProps {
 
 export default function StudyGuide({ onBack, onSelectSubject }: StudyGuideProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [subLevelFilter, setSubLevelFilter] = useState<'all' | 'jhs' | 'shs'>('all');
 
   const filteredSubjects = subjects.filter(subject => {
+    if (subLevelFilter === 'jhs' && !isJHSSubject(subject.id)) return false;
+    if (subLevelFilter === 'shs' && !isSHSSubject(subject.id)) return false;
+    
+    if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
     const nameMatch = subject.name.toLowerCase().includes(query);
     const topicMatch = subject.syllabus.some(topic => topic.toLowerCase().includes(query));
@@ -44,6 +50,51 @@ export default function StudyGuide({ onBack, onSelectSubject }: StudyGuideProps)
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-2xl py-3 pl-12 pr-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white/10 transition-all backdrop-blur-md"
           />
+        </div>
+      </div>
+
+      {/* Level filter tabs */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-8 justify-between">
+        <div className="flex p-1 bg-white/5 border border-white/10 rounded-2xl overflow-x-auto gap-1">
+          <button
+            onClick={() => setSubLevelFilter('all')}
+            className={cn(
+              "flex-1 sm:flex-none px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+              subLevelFilter === 'all'
+                ? "bg-slate-800 text-white border border-white/10 shadow-sm"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            🎒 All ({subjects.length})
+          </button>
+          <button
+            onClick={() => setSubLevelFilter('jhs')}
+            className={cn(
+              "flex-1 sm:flex-none px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+              subLevelFilter === 'jhs'
+                ? "bg-blue-600 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            📝 JHS BECE ({subjects.filter(s => isJHSSubject(s.id)).length})
+          </button>
+          <button
+            onClick={() => setSubLevelFilter('shs')}
+            className={cn(
+              "flex-1 sm:flex-none px-4 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+              subLevelFilter === 'shs'
+                ? "bg-indigo-600 text-white shadow"
+                : "text-slate-400 hover:text-slate-200"
+            )}
+          >
+            🎓 SHS WASSCE ({subjects.filter(s => isSHSSubject(s.id)).length})
+          </button>
+        </div>
+
+        <div className="text-xs font-medium text-slate-400 flex items-center gap-1">
+          <span>Showing</span>
+          <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold">{filteredSubjects.length}</span>
+          <span>subjects</span>
         </div>
       </div>
 

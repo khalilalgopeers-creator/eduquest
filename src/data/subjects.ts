@@ -11701,5 +11701,67 @@ export const subjects: Subject[] = [
       { id: 'bio4', text: 'What is "bioremediation"?', options: ['Making medicine', 'Using microbes to clean pollution', 'Cloning animals', 'Growing plants'], correctAnswer: 1, explanation: 'It uses biology to solve environmental problems.' },
       { id: 'bio5', text: 'Which process makes many copies of a DNA segment?', options: ['Cloning', 'PCR', 'Sequencing', 'Dyeing'], correctAnswer: 1, explanation: 'PCR (Polymerase Chain Reaction) amplifies DNA.' }
     ]
+  },
+  {
+    id: 'career',
+    name: 'Career Technology',
+    icon: 'Briefcase',
+    color: 'bg-teal-500',
+    description: 'Learn essential craft, design, entrepreneurial, and engineering skills for the modern workforce.',
+    syllabus: [
+      'Introduction to Career Technology',
+      'Health and Safety in the Workshop',
+      'Materials and Tools for Designing',
+      'Personal Hygiene and Food Hygiene',
+      'Techniques of Food Preparation',
+      'Sewing and Garment Making',
+      'Basic Building and Construction Techniques',
+      'Basic Electrical and Electronics Systems',
+      'Entrepreneurial and Marketing Skills',
+      'Technical Drawing and Graphic Communication'
+    ],
+    concepts: [
+      { title: 'PPE', explanation: 'Personal Protective Equipment vital for workshop and kitchen safety.' },
+      { title: 'Technical Sketching', explanation: 'Freehand or instrument drawing of elements to communicate design ideas.' },
+      { title: 'Food Preservation', explanation: 'Methods used to prevent food spoilage and extend shelf life.' },
+      { title: 'Joining Techniques', explanation: 'Methods used to bond materials like wood, metal, or fabric together.' },
+      { title: 'Business Plan', explanation: 'A document outlining a business concept, market analysis, and financial plan.' }
+    ],
+    questions: [
+      { id: 'car1', text: 'Which of the following is a Personal Protective Equipment (PPE) used in a woodwork workshop?', options: ['Safety goggles', 'Sunglasses', 'Swimming goggles', 'Reading glasses'], correctAnswer: 0, explanation: 'Safety goggles protect the eyes from wood dust and flying splinters.' },
+      { id: 'car2', text: 'Which joint is commonly used to join two pieces of timber at a right angle?', options: ['Mortise and tenon joint', 'Butt joint', 'Lap joint', 'Mitre joint'], correctAnswer: 0, explanation: 'Mortise and tenon is one of the strongest joints used in woodworking.' },
+      { id: 'car3', text: 'What is the primary purpose of food preservation?', options: ['To make food sweeter', 'To stop food from spoiling', 'To change food color', 'To reduce cooking time'], correctAnswer: 1, explanation: 'Preservation destroys or inhibits micro-organisms to prevent decay.' },
+      { id: 'car4', text: 'Which of these is a temporary stitch in sewing?', options: ['Tacking stitch', 'Back stitch', 'Running stitch', 'Hemming stitch'], correctAnswer: 0, explanation: 'Tacking is used to hold fabric pieces together temporarily before permanent sewing.' },
+      { id: 'car5', text: 'What does a scale of 1:2 on a technical drawing mean?', options: ['The drawing is twice the actual size', 'The drawing is half the actual size', 'The drawing is the actual size', 'The drawing is ten times smaller'], correctAnswer: 1, explanation: 'A 1:2 scale represents a reduction scale where 1 unit on paper represents 2 units on the actual object.' }
+    ]
+  },
+  {
+    id: 'fante',
+    name: 'Fante',
+    icon: 'MessageSquare',
+    color: 'bg-orange-500',
+    description: 'Sua Fante Kasa, Amandze, na Akehyedze ama wo nsɔhwɛ mfe pii. (Learn Fante Language, Culture and Proverbs for your exams.)',
+    syllabus: [
+      'Fante Ɔfã: Mpanyinsɛm na Abɛbusɛm (Proverbs and Wise Sayings)',
+      'Fante Ndze na Kasa Nhyehyɛe (Phonology and Grammar)',
+      'Kasadwin na Sɛnkyerɛndze (Lexicon and Symbols)',
+      'Amandze na Ngyedo (Culture, Customs, and Greeting)',
+      'Akyerɛna na Epɔw Nhyehyɛe (Punctuation and Syntax in Fante)',
+      'Fante Nwom na Abakɔsɛm (Fante Music, Folklore, and History)',
+      'Ngyegyee na Su (Oral Literature and Performance)'
+    ],
+    concepts: [
+      { title: 'Abɛbusɛm', explanation: 'Proverbs used by elders to convey deep philosophical and cultural meaning in Fante society.' },
+      { title: 'Amandze', explanation: 'Traditions, festivals, and customs that represent the identity of the Fante people.' },
+      { title: 'Akyerɛw', explanation: 'Fante orthography and writing systems designed for modern linguistic transcription.' },
+      { title: 'Mpaeyie', explanation: 'Libation pouring as ancestral communication and spiritual reverence in traditional gatherings.' }
+    ],
+    questions: [
+      { id: 'fan1', text: 'Sɛ yɛbɔ abɛbu dɛ "Hu mpa bɔ mpa", nna ɔkyerɛ dɛn?', options: ['Yɛbɔ mpaɛ daa', 'Yɛhwehwɛ ndzɛmba yie ansaana yɛayɛ', 'Yɛda mpa dɔɔso', 'Yɛpɛ dɛ yɛyɛ hɔn ho fɛ'], correctAnswer: 1, explanation: 'This proverb advises diligence, planning, and checking things thoroughly before committing.' },
+      { id: 'fan2', text: 'Edziban bɛn na Fantefo tɔn na wodzi tsitsir wɔ hɔn mpoano?', options: ['Fufu na nkrakra', 'Kɔnkɔnte', 'Kɔb na nam', 'Dokono na nam dɔkɔdɔkɔ'], correctAnswer: 3, explanation: 'Fante coastal culture is famous for Dokono (kenkey) paired with fresh or fried fish and hot pepper.' },
+      { id: 'fan3', text: 'Dzin dɛ "Kofi" yɛ dzin a yɛdze ma abofra a wɔwoo no dɔnhwer bɛn mu?', options: ['Menda', 'Fida', 'Dwowda', 'Kwasiada'], correctAnswer: 1, explanation: '"Kofi" is the Fante soul name (Kradzin) given to a male child born on Friday (Fida).' },
+      { id: 'fan4', text: 'Kasakoa bi dɛ "Ɔkaatsefo no gyee mbir na hɛn asom guaree", dɛn na ɔkyerɛ?', options: ['Hɛn asom asoɛ', 'Hɛn abrabɔ kã mu', 'Ɔbaa no guaree ndzɛmba dɔɔso', 'Obi kasa a ne nkyerɛase yɛ dɛ yɛatse asɛm no yie'], correctAnswer: 3, explanation: 'This expression means someone communicated so clearly and beautifully that it brought absolute clarity and satisfaction to the listeners.' },
+      { id: 'fan5', text: 'Ɔfã bɛn mu na asafo nwom hyɛ hɔn bɔ mu?', options: ['Asafo kuw dwumayɛ', 'Nkranye ekyir', 'Guankɔ', 'Afahyɛ seree'], correctAnswer: 0, explanation: 'Asafo songs are sacred and patriotic military company songs sung during operations, festivals, and community assignments.' }
+    ]
   }
 ];

@@ -6,6 +6,7 @@ import { subjects } from '../data/subjects';
 import { generatePastQuestions } from '../lib/gemini';
 import { cn } from '../lib/utils';
 import NationalMockCenter from './NationalMockCenter';
+import { getSubjectLevel, isJHSSubject, isSHSSubject } from '../utils/subjectHelpers';
 
 interface PastQuestionsProps {
   onBack: () => void;
@@ -26,6 +27,28 @@ export default function PastQuestions({ onBack, onStartQuiz, initialSubjectId }:
   const [selectedYear, setSelectedYear] = useState<number>(2024);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [subLevelFilter, setSubLevelFilter] = useState<'all' | 'jhs' | 'shs'>(() => {
+    const level = getSubjectLevel(selectedSubject.id);
+    return level === 'Both' ? 'all' : (level.toLowerCase() as 'jhs' | 'shs');
+  });
+
+  // Automatically enforce / set WASSCE or BECE depending on chosen subject
+  useEffect(() => {
+    const level = getSubjectLevel(selectedSubject.id);
+    if (level === 'JHS') {
+      setSelectedType('BECE');
+    } else if (level === 'SHS') {
+      setSelectedType('WASSCE');
+    }
+  }, [selectedSubject]);
+
+  // Filter subjects for selection list
+  const selectableSubjects = subjects.filter(s => {
+    if (subLevelFilter === 'jhs') return isJHSSubject(s.id);
+    if (subLevelFilter === 'shs') return isSHSSubject(s.id);
+    return true;
+  });
 
   const years = Array.from({ length: 2025 - 1990 + 1 }, (_, i) => 2025 - i);
 
@@ -100,26 +123,83 @@ export default function PastQuestions({ onBack, onStartQuiz, initialSubjectId }:
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-              {/* Selection Panel */}
+               {/* Selection Panel */}
               <div className="md:col-span-1 space-y-6">
                 <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Select Subject</label>
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                    {subjects.map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => setSelectedSubject(s)}
-                        className={cn(
-                          "w-full p-3 rounded-xl text-left text-sm font-bold transition-all flex items-center gap-3",
-                          selectedSubject.id === s.id ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-white/5 text-slate-400 hover:bg-white/10"
-                        )}
-                      >
-                        <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", s.color)}>
-                          <History size={16} />
-                        </div>
-                        {s.name}
-                      </button>
-                    ))}
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest">Select Subject</label>
+                  </div>
+                  
+                  {/* Miniature Level Tabs */}
+                  <div className="flex p-1 bg-white/5 border border-white/10 rounded-xl mb-4 text-[10px] font-black uppercase tracking-wider">
+                    <button
+                      onClick={() => setSubLevelFilter('all')}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg transition-all",
+                        subLevelFilter === 'all'
+                          ? "bg-slate-800 text-white shadow"
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      All ({subjects.length})
+                    </button>
+                    <button
+                      onClick={() => setSubLevelFilter('jhs')}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg transition-all",
+                        subLevelFilter === 'jhs'
+                          ? "bg-blue-600 text-white shadow"
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      JHS ({subjects.filter(s => isJHSSubject(s.id)).length})
+                    </button>
+                    <button
+                      onClick={() => setSubLevelFilter('shs')}
+                      className={cn(
+                        "flex-1 py-1.5 rounded-lg transition-all",
+                        subLevelFilter === 'shs'
+                          ? "bg-indigo-600 text-white shadow"
+                          : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      SHS ({subjects.filter(s => isSHSSubject(s.id)).length})
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
+                    {selectableSubjects.map(s => {
+                      const level = getSubjectLevel(s.id);
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => setSelectedSubject(s)}
+                          className={cn(
+                            "w-full p-3 rounded-xl text-left text-sm font-bold transition-all flex items-center justify-between gap-3",
+                            selectedSubject.id === s.id ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "bg-white/5 text-slate-400 hover:bg-white/10"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center text-white", s.color)}>
+                              <History size={16} />
+                            </div>
+                            <span>{s.name}</span>
+                          </div>
+                          {level === 'Both' ? (
+                            <span className="text-[8px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shrink-0 font-extrabold uppercase">
+                              Both
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              "text-[8px] px-1.5 py-0.5 rounded shrink-0 font-extrabold uppercase",
+                              level === 'JHS' ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"
+                            )}>
+                              {level}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

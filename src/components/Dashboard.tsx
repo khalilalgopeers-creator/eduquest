@@ -1,4 +1,5 @@
-import { motion } from 'motion/react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 import { UserProgress, Subject, MockExamResult } from '../types';
@@ -22,17 +23,106 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
     return [];
   })();
 
-  const trendData = mockResults.slice(-8).map(m => ({
-    name: m.subjectName.length > 11 ? m.subjectName.substring(0, 11) + '...' : m.subjectName,
-    fullSubjectName: m.subjectName,
-    percentage: m.percentage,
-    grade: m.grade,
-    score: m.score,
-    totalQuestions: m.totalQuestions,
-    date: m.date,
-    level: m.level,
-    indexNumber: m.indexNumber
-  }));
+  const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
+
+  // Find any significant score drops compared to moving average
+  const checkSignificantDrops = () => {
+    const alerts: Array<{
+      id: string;
+      subjectName: string;
+      subjectId: string;
+      latestPercentage: number;
+      movingAverage: number;
+      dropAmount: number;
+      date: string;
+      grade: string;
+    }> = [];
+
+    // Group exams by subject
+    const subjectExamsMap: Record<string, MockExamResult[]> = {};
+    mockResults.forEach(r => {
+      if (!subjectExamsMap[r.subjectId]) {
+        subjectExamsMap[r.subjectId] = [];
+      }
+      subjectExamsMap[r.subjectId].push(r);
+    });
+
+    // Check for each subject with at least 2 exams if the latest exam drops compared to moving average
+    Object.keys(subjectExamsMap).forEach(subId => {
+      const exams = subjectExamsMap[subId];
+      if (exams.length < 2) return;
+
+      // Sort exams chronologically by Date
+      const sortedExams = [...exams].sort((a, b) => {
+        const timeA = new Date(a.date).getTime();
+        const timeB = new Date(b.date).getTime();
+        if (isNaN(timeA) || isNaN(timeB)) return 0;
+        return timeA - timeB;
+      });
+      
+      const latestExam = sortedExams[sortedExams.length - 1];
+      const previousExams = sortedExams.slice(0, -1);
+      
+      // Calculate moving average of recent previous exams (up to last 5 results)
+      const windowSize = 5;
+      const recentPreviousExams = previousExams.slice(-windowSize);
+      const sum = recentPreviousExams.reduce((acc, curr) => acc + curr.percentage, 0);
+      const movingAvg = Math.round(sum / recentPreviousExams.length);
+
+      const drop = movingAvg - latestExam.percentage;
+      // 12% drop is considered significant
+      if (drop >= 12) {
+        alerts.push({
+          id: latestExam.id || `drop-${subId}-${latestExam.date}`,
+          subjectName: latestExam.subjectName,
+          subjectId: latestExam.subjectId,
+          latestPercentage: latestExam.percentage,
+          movingAverage: movingAvg,
+          dropAmount: drop,
+          date: latestExam.date,
+          grade: latestExam.grade
+        });
+      }
+    });
+
+    return alerts.sort((a, b) => b.dropAmount - a.dropAmount);
+  };
+
+  const dropsAlerts = checkSignificantDrops().filter(a => !dismissedAlerts.includes(a.id));
+
+  // Enrich trend data with drop details
+  const trendData = mockResults.slice(-8).map(m => {
+    // Find prior exams of the same subject up to this chronological index
+    const mIdx = mockResults.indexOf(m);
+    const priorExams = mockResults
+      .slice(0, mIdx)
+      .filter(prev => prev.subjectId === m.subjectId);
+
+    let hadDrop = false;
+    let priorAvg = 0;
+    if (priorExams.length >= 1) {
+      const windowSize = 5;
+      const recentPrior = priorExams.slice(-windowSize);
+      const sum = recentPrior.reduce((acc, curr) => acc + curr.percentage, 0);
+      priorAvg = Math.round(sum / recentPrior.length);
+      hadDrop = (priorAvg - m.percentage) >= 12;
+    }
+
+    return {
+      name: m.subjectName.length > 11 ? m.subjectName.substring(0, 11) + '...' : m.subjectName,
+      fullSubjectName: m.subjectName,
+      percentage: m.percentage,
+      grade: m.grade,
+      score: m.score,
+      totalQuestions: m.totalQuestions,
+      date: m.date,
+      level: m.level,
+      indexNumber: m.indexNumber,
+      hadDrop,
+      priorAvg,
+      dropAmount: priorAvg - m.percentage
+    };
+  });
 
   const totalScore = progress.reduce((acc, p) => acc + p.score, 0);
   const totalAttempts = progress.reduce((acc, p) => acc + p.totalAttempts, 0);
@@ -71,6 +161,71 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
         </button>
         <h2 className="text-3xl font-black text-white tracking-tight">Your Learning Dashboard</h2>
       </div>
+
+      {/* Grade Drop Alert Notifications */}
+      <AnimatePresence>
+        {dropsAlerts.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-8 space-y-4"
+          >
+            {dropsAlerts.map(alert => (
+              <motion.div
+                key={alert.id}
+                layout
+                className="relative overflow-hidden bg-gradient-to-r from-red-950/40 via-amber-950/20 to-slate-900/60 border border-red-500/30 rounded-3xl p-6 backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 text-left shadow-lg shadow-red-950/20"
+              >
+                {/* Decorative background glow */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none" />
+                
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 shrink-0 mt-0.5 animate-pulse">
+                    <Icons.TrendingDown size={28} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 text-xs font-black uppercase tracking-wider">
+                        Performance Drop Detected
+                      </span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {alert.date}
+                      </span>
+                    </div>
+                    <h4 className="text-lg font-extrabold text-white mb-1">
+                      Significant score decrease in {alert.subjectName} Mock Exam
+                    </h4>
+                    <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
+                      Your latest mock score of <span className="font-extrabold text-red-400">{alert.latestPercentage}%</span> (Grade {alert.grade}) is <span className="font-extrabold text-red-400">{alert.dropAmount}% lower</span> than your previous preparation moving average of <span className="font-bold text-slate-200">{alert.movingAverage}%</span>. Let's practice more to get back on track!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto shrink-0 self-stretch md:self-center justify-end">
+                  <button
+                    onClick={() => {
+                      // Navigate to study planner or start study focus
+                      onViewStudyPlanner();
+                    }}
+                    className="px-5 py-2.5 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 rounded-xl font-bold transition-all text-xs flex items-center gap-1.5 shrink-0"
+                  >
+                    <Icons.Sparkles size={14} />
+                    <span>Get Study Plan</span>
+                  </button>
+                  <button
+                    onClick={() => setDismissedAlerts(prev => [...prev, alert.id])}
+                    className="p-2.5 hover:bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all shrink-0"
+                    title="Dismiss notification"
+                  >
+                    <Icons.X size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <StatCard icon={Icons.Trophy} label="Total Score" value={totalScore} color="text-yellow-400" />
@@ -313,9 +468,15 @@ export default function Dashboard({ progress, onBack, onViewStudyPlanner, onView
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400 mb-6">
+            <p className="text-xs text-slate-400 mb-2">
               Visual tracking of your overall progress percentage and WAEC mock grades over time.
             </p>
+            {checkSignificantDrops().length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-xl mb-4 inline-flex animate-pulse select-none">
+                <Icons.AlertTriangle size={14} className="shrink-0" />
+                <span>Attention: Recent significant grade drop detected!</span>
+              </div>
+            )}
           </div>
 
           {trendData.length > 0 ? (
@@ -439,17 +600,23 @@ function MockTooltip({ active, payload }: any) {
             Score: <span className="text-white font-bold">{data.score}/{data.totalQuestions}</span>
           </p>
           <p className="text-slate-400">
-            Percentage: <span className="text-blue-400 font-black">{data.percentage}%</span>
+            Percentage: <span className={cn("font-black", data.hadDrop ? "text-red-400" : "text-blue-400")}>{data.percentage}%</span>
           </p>
           <p className="text-slate-400">
             Index No: <span className="text-slate-300 font-mono text-[10px]">{data.indexNumber}</span>
           </p>
           <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-white/5">
             <span className="text-[10px] font-bold text-slate-400">Grade:</span>
-            <span className="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-500 font-black text-xs">
+            <span className={cn("px-2 py-0.5 rounded-full font-black text-xs", data.hadDrop ? "bg-red-500/10 text-red-500" : "bg-yellow-500/10 text-yellow-500")}>
               {data.grade}
             </span>
           </div>
+          {data.hadDrop && (
+            <div className="mt-2.5 pt-2 border-t border-red-500/20 bg-red-500/10 -mx-4 -mb-4 px-4 py-2 text-[10px] font-bold text-red-400 rounded-b-2xl flex items-center gap-1">
+              <Icons.TrendingDown size={12} className="shrink-0" />
+              <span>Dropped {data.dropAmount}% compared to prior average ({data.priorAvg}%)!</span>
+            </div>
+          )}
         </div>
       </div>
     );

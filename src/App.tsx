@@ -17,6 +17,7 @@ import GroupStudyHub from './components/GroupStudyHub';
 import { subjects } from './data/subjects';
 import { AppState, Subject, UserProgress, Question, ExaminationType } from './types';
 import { cn } from './lib/utils';
+import { isJHSSubject, isSHSSubject } from './utils/subjectHelpers';
 
 export default function App() {
   const [state, setState] = useState<AppState>('home');
@@ -33,6 +34,7 @@ export default function App() {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [groupStudySubject, setGroupStudySubject] = useState<Subject | null>(null);
+  const [levelFilter, setLevelFilter] = useState<'all' | 'jhs' | 'shs'>('all');
 
   const [profile, setProfile] = useState(() => {
     const saved = localStorage.getItem('eduquest_profile');
@@ -75,12 +77,19 @@ export default function App() {
     };
   }, []);
 
-  // Filter subjects based on search query
+  // Filter subjects based on search query and level filter
   const filteredSubjects = useMemo(() => {
-    if (!searchQuery.trim()) return subjects;
+    let list = subjects;
+    if (levelFilter === 'jhs') {
+      list = list.filter(subject => isJHSSubject(subject.id));
+    } else if (levelFilter === 'shs') {
+      list = list.filter(subject => isSHSSubject(subject.id));
+    }
+
+    if (!searchQuery.trim()) return list;
     
     const query = searchQuery.toLowerCase().trim();
-    return subjects.filter(subject => {
+    return list.filter(subject => {
       const nameMatch = subject.name.toLowerCase().includes(query);
       const conceptMatch = subject.concepts.some(concept => 
         concept.title.toLowerCase().includes(query) || 
@@ -91,7 +100,7 @@ export default function App() {
       );
       return nameMatch || conceptMatch || syllabusMatch;
     });
-  }, [searchQuery]);
+  }, [searchQuery, levelFilter]);
 
   const handleSubjectSelect = (subject: Subject) => {
     setSelectedSubject(subject);
@@ -251,6 +260,51 @@ export default function App() {
                     <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-slate-300 whitespace-nowrap">
                       {subjects.length} Subjects Available
                     </div>
+                  </div>
+                </div>
+
+                {/* Level Tabs Selection */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-8 justify-between">
+                  <div className="flex p-1.5 bg-white/5 border border-white/10 rounded-2xl overflow-x-auto gap-1">
+                    <button
+                      onClick={() => setLevelFilter('all')}
+                      className={cn(
+                        "flex-1 sm:flex-none px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+                        levelFilter === 'all'
+                          ? "bg-slate-800 text-white border border-white/10 shadow-md"
+                          : "text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      🎒 All Levels ({subjects.length})
+                    </button>
+                    <button
+                      onClick={() => setLevelFilter('jhs')}
+                      className={cn(
+                        "flex-1 sm:flex-none px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+                        levelFilter === 'jhs'
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20"
+                          : "text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      📝 JHS BECE ({subjects.filter(s => isJHSSubject(s.id)).length})
+                    </button>
+                    <button
+                      onClick={() => setLevelFilter('shs')}
+                      className={cn(
+                        "flex-1 sm:flex-none px-5 py-2.5 text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap",
+                        levelFilter === 'shs'
+                          ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                          : "text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      🎓 SHS WASSCE ({subjects.filter(s => isSHSSubject(s.id)).length})
+                    </button>
+                  </div>
+
+                  <div className="text-xs font-medium text-slate-400 flex items-center gap-2 self-end sm:self-center">
+                    <span>Showing</span>
+                    <span className="px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 font-bold">{filteredSubjects.length}</span>
+                    <span>subjects</span>
                   </div>
                 </div>
                 

@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import * as Icons from 'lucide-react';
 import { Subject } from '../types';
 import { cn } from '../lib/utils';
+import { getSubjectLevel } from '../utils/subjectHelpers';
 
 interface SubjectCardProps {
   subject: Subject;
@@ -11,6 +12,7 @@ interface SubjectCardProps {
 
 export default function SubjectCard({ subject, onClick, onGroupStudyClick }: SubjectCardProps) {
   const Icon = (Icons as any)[subject.icon] || Icons.Book;
+  const level = getSubjectLevel(subject.id);
 
   return (
     <motion.div
@@ -29,11 +31,29 @@ export default function SubjectCard({ subject, onClick, onGroupStudyClick }: Sub
       )}
       onClick={onClick}
     >
+      {/* Level Badge */}
+      <div className="absolute top-4 right-4 flex gap-1 z-10">
+        {level === 'Both' ? (
+          <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[10px] font-black uppercase tracking-wider">
+            JHS & SHS
+          </span>
+        ) : level === 'JHS' ? (
+          <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20 text-[10px] font-black uppercase tracking-wider">
+            JHS (BECE)
+          </span>
+        ) : (
+          <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 text-[10px] font-black uppercase tracking-wider">
+            SHS (WASSCE)
+          </span>
+        )}
+      </div>
+
       <div className={cn("mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl text-white transition-all group-hover:scale-110", subject.color)}>
         <Icon size={24} />
       </div>
-      <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{subject.name}</h3>
+      <h3 className="text-xl font-bold text-white mb-2 tracking-tight pr-14">{subject.name}</h3>
       <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed mb-4">{subject.description}</p>
+
       
       <div className="flex items-center justify-between gap-4 pt-4 border-t border-white/5">
         <div className="flex items-center text-xs font-bold text-blue-400 group-hover:text-blue-300 transition-colors">
